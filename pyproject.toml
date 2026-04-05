@@ -8,6 +8,8 @@ version = "0.1.0"
 description = "Peptide <-> SMILES utilities for monomer peptides with non-canonical residues, terminal modifications, and selected cyclizations."
 readme = "Readme.md"
 requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
 keywords = ["peptide", "smiles", "selfies", "chemistry", "bioinformatics", "rdkit"]
 classifiers = [
     "Development Status :: 3 - Alpha",
