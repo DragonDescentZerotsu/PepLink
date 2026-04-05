@@ -1,0 +1,12 @@
+all_peptides_data.json
+AGENTS.md
+.DS_Store
+.coverage
+.pytest_cache/
+.vscode/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+PepLink.egg-info/
+build/
+dist/

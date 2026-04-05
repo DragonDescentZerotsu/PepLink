@@ -1,0 +1,228 @@
+{
+    "type": [
+        {
+            "id": 58,
+            "name": "DSB",
+            "description": "Disulfide Bond",
+            "visual": "-S-S-",
+            "chinese_comment": "a covalent bond that forms between two sulfur atoms in cysteine residues"
+        },
+        {
+            "id": 26139,
+            "name": "AMD",
+            "description": "Amide Bond",
+            "visual": "R-(O=)C-N(-R)-R",
+            "chinese_comment": "任何羧基和N形成的单键，但其实有双键的性质，C-N在这里是不能旋转的"
+        },
+        {
+            "id": 59,
+            "name": "TIE",
+            "description": "Thioether Bond",
+            "visual": "R–S–R’",
+            "chinese_comment": "一般结构形式为 R–S–R’"
+        },
+        {
+            "id": 6755,
+            "name": "DCB",
+            "description": "Dicarbon Bond (C=C)",
+            "visual": "",
+            "chinese_comment": ""
+        },
+        {
+            "id": 1,
+            "name": "EST",
+            "description": "Ester bond",
+            "visual": "R–C(=O)O–R’",
+            "chinese_comment": "由酸-COOH和醇-OH生成"
+        },
+        {
+            "id": 16882,
+            "name": "p-XylB",
+            "description": "para-Xylene thioether bridge connecting a pair of CYS residues",
+            "visual": "-S-C-C₆-C-S-",
+            "chinese_comment": "这是指一个对二甲苯硫醚桥（对二甲苯结构通过硫醚键桥接）。对二甲苯（para-Xylene）是一种有机化合物，由一个苯环和两个位于对位（1,4 位）的甲基组成。将这个对二甲苯与硫醚桥结合，即意味着通过一个硫原子将其连接到两侧的结构上"
+        },
+        {
+            "id": 23423,
+            "name": "TRZB",
+            "description": "Sidechain-Sidechain Bond linked with Triazolic bridge",
+            "visual": "C2H3N3, 4-substituted-1H-1,2,3-triazole may be good",
+            "chinese_comment": "https://en.wikipedia.org/wiki/Triazole#:~:text=A%20triazole%20is%20a%20heterocyclic,nitrogen%20atoms%20within%20the%20ring."
+        },
+        {
+            "id": 21774,
+            "name": "(E)-but-2-enyl-B",
+            "description": "Sidechain-Sidechain C=C bond cross-linked with (E)-but-2-enyl",
+            "visual": "-C-C=C-C-",
+            "chinese_comment": ""
+        },
+        {
+            "id": 21775,
+            "name": "BisMeBn-B",
+            "description": "Sidechain-Sidechain Bond cross-linked with Bismethylenebenzene",
+            "visual": "-C-C6-C-",
+            "chinese_comment": "侧链-侧链连接是通过二亚甲基苯（Bismethylenebenzene）实现的。也就是说，这两个侧链是通过一个带有两个甲基的苯环（类似于苯桥结构）交联在一起。"
+        },
+        {
+            "id": 23972,
+            "name": "but-2-ynyl-B",
+            "description": "Sidechain-Sidechain carbon-carbon triple bond (alkyne) cross-linked with but-2-ynyl",
+            "visual": "-C-C≡C-C-",
+            "chinese_comment": ""
+        },
+        {
+            "id": 26137,
+            "name": "AMN",
+            "description": "Amine Bond",
+            "visual": "",
+            "chinese_comment": "通常指的是含有氨基（-NH₂）或胺基（-NH- 或 -N-）的化学键"
+        },
+        {
+            "id": 26134,
+            "name": "ETH",
+            "description": "Ether Bond",
+            "visual": "R-O-R', C-O-C",
+            "chinese_comment": "两个碳原子通过一个氧原子连接的化学键"
+        },
+        {
+            "id": 26135,
+            "name": "CAR",
+            "description": "Carbon Bond (C-C)",
+            "visual": "",
+            "chinese_comment": ""
+        }
+    ],
+    "cycleType": [
+        {
+            "id": 4,
+            "intraChainBondTypeId": 0,
+            "name": "CST",
+            "description": "Cystine"
+        },
+        {
+            "id": 11,
+            "intraChainBondTypeId": 0,
+            "name": "NCB",
+            "description": "N–C-termini bond"
+        },
+        {
+            "id": 5,
+            "intraChainBondTypeId": 0,
+            "name": "MeLAN",
+            "description": "Methyl lanthionine"
+        },
+        {
+            "id": 3,
+            "intraChainBondTypeId": 0,
+            "name": "LAN",
+            "description": "Lanthionine"
+        },
+        {
+            "id": 22,
+            "intraChainBondTypeId": 0,
+            "name": "LAC",
+            "description": "Amide bond in the cycle (Lactam)"
+        },
+        {
+            "id": 21,
+            "intraChainBondTypeId": 0,
+            "name": "LCN",
+            "description": "Cyclic ester (Lactone)"
+        },
+        {
+            "id": 7,
+            "intraChainBondTypeId": 0,
+            "name": "SAC",
+            "description": "Sactionine (sulfur-to-alpha carbon linkage, S-Cα)"
+        },
+        {
+            "id": 20,
+            "intraChainBondTypeId": 0,
+            "name": "DKP",
+            "description": "2,5-Diketopiperazine"
+        },
+        {
+            "id": 1,
+            "intraChainBondTypeId": 0,
+            "name": "THZD",
+            "description": "Thiazolidine"
+        },
+        {
+            "id": 10,
+            "intraChainBondTypeId": 0,
+            "name": "THZiN",
+            "description": "Thiazinane"
+        },
+        {
+            "id": 12,
+            "intraChainBondTypeId": 0,
+            "name": "TRZ",
+            "description": "Triazole"
+        },
+        {
+            "id": 2,
+            "intraChainBondTypeId": 0,
+            "name": "THZ",
+            "description": "Thiazole"
+        },
+        {
+            "id": 39,
+            "intraChainBondTypeId": 0,
+            "name": "AVC",
+            "description": "Aminovinyl Cysteine"
+        },
+        {
+            "id": 37,
+            "intraChainBondTypeId": 0,
+            "name": "βLAC",
+            "description": "Beta-lactam (four-membered lactam) ring"
+        },
+        {
+            "id": 13,
+            "intraChainBondTypeId": 0,
+            "name": "BAR",
+            "description": "Biaryl"
+        },
+        {
+            "id": 18,
+            "intraChainBondTypeId": 0,
+            "name": "MeOXZ",
+            "description": "Methyloxazole"
+        },
+        {
+            "id": 16,
+            "intraChainBondTypeId": 0,
+            "name": "OXZ",
+            "description": "Oxazole"
+        },
+        {
+            "id": 8,
+            "intraChainBondTypeId": 0,
+            "name": "SBC",
+            "description": "Sulfur-to-beta carbon linkage (S-Cβ)"
+        },
+        {
+            "id": 40,
+            "intraChainBondTypeId": 0,
+            "name": "MeAVC\t",
+            "description": "Aminovinyl Methyl Cysteine"
+        }
+    ],
+    "chainParticipating": [
+        {
+            "id": 2,
+            "name": "SSB",
+            "description": "Sidechain-Sidechain Bond"
+        },
+        {
+            "id": 1,
+            "name": "MMB",
+            "description": "Mainchain-Mainchain Bond"
+        },
+        {
+            "id": 3,
+            "name": "SMB",
+            "description": "Sidechain-Mainchain Bond"
+        }
+    ]
+}

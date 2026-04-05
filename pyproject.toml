@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PepLink"
+version = "0.1.0"
+description = "Peptide <-> SMILES utilities for monomer peptides with non-canonical residues, terminal modifications, and selected cyclizations."
+readme = "Readme.md"
+requires-python = ">=3.9"
+dependencies = [
+    "rdkit",
+    "selfies>=2.1.1",
+]
+
+[tool.setuptools]
+packages = ["PepLink"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+PepLink = ["data/*.csv", "data/terminal_modifications/*.csv"]
