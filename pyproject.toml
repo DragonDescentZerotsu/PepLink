@@ -8,14 +8,37 @@ version = "0.1.0"
 description = "Peptide <-> SMILES utilities for monomer peptides with non-canonical residues, terminal modifications, and selected cyclizations."
 readme = "Readme.md"
 requires-python = ">=3.9"
+keywords = ["peptide", "smiles", "selfies", "chemistry", "bioinformatics", "rdkit"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
 dependencies = [
     "rdkit",
     "selfies>=2.1.1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/DragonDescentZerotsu/PepLink"
+Repository = "https://github.com/DragonDescentZerotsu/PepLink"
+Issues = "https://github.com/DragonDescentZerotsu/PepLink/issues"
+Releases = "https://github.com/DragonDescentZerotsu/PepLink/releases"
+
 [tool.setuptools]
-packages = ["PepLink"]
 include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["PepLink"]
+namespaces = false
 
 [tool.setuptools.package-data]
 PepLink = ["data/*.csv", "data/terminal_modifications/*.csv"]
