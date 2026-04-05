@@ -1,5 +1,16 @@
 ![PepLink 展示图](assets/Peplink.png)
 
+<p align="center">
+  <a href="https://huggingface.co/spaces/Kiria-Nozan/PepLink">
+    <img alt="Hugging Face logo" src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.svg" height="44">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://huggingface.co/spaces/Kiria-Nozan/PepLink"><strong>在线体验 PepLink Hugging Face Space</strong></a><br>
+  如果你想直接在线使用，可以一键打开部署在 Hugging Face Spaces 上的 Gradio 应用。
+</p>
+
 # PepLink
 
 PepLink 是一个面向 peptide 结构表示转换的 Python 包。
