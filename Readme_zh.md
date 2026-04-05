@@ -1,3 +1,5 @@
+![PepLink 展示图](assets/Peplink.png)
+
 # PepLink
 
 PepLink 是一个面向 peptide 结构表示转换的 Python 包。

@@ -1,3 +1,5 @@
+![PepLink showcase](assets/Peplink.png)
+
 # PepLink
 
 PepLink is a Python package for peptide-to-structure conversion.
