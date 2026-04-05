@@ -4,6 +4,23 @@
 
 PepLink is a Python package for peptide-to-structure conversion.
 
+## At A Glance
+
+Before diving into the APIs, the fastest way to understand PepLink v1 is this:
+
+- 420 bundled unusual amino acids (non-canonical residue mappings)
+- 296 bundled terminal modifications in total
+- 241 N-terminal modifications
+- 55 C-terminal modifications
+- 3 cyclic-peptide topology classes
+- 11 implemented intrachain bond chemistries
+
+The 3 cyclic-peptide topology classes are:
+
+- `SSB`: sidechain-sidechain cyclization
+- `SMB`: sidechain-mainchain cyclization
+- `MMB`: mainchain-mainchain cyclization, including head-to-tail macrocyclization
+
 It currently focuses on one reliable v1 scope:
 
 - `aa_seqs_to_smiles(...)`: monomer peptide definition -> `SMILES` or `SELFIES`
@@ -95,6 +112,7 @@ PepLink v1 supports monomer peptides with:
 - 420 bundled non-canonical amino-acid mappings
 - all 241 N-terminal modifications found in `all_peptides_data.json`
 - all 55 C-terminal modifications found in `all_peptides_data.json`
+- 3 cyclic-peptide topology classes: `SSB`, `SMB`, and `MMB`
 - 11 implemented intrachain bond types
 
 Supported intrachain bond types:
