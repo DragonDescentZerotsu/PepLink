@@ -575,3 +575,16 @@ smiles = aa_seqs_to_smiles(
 - Reverse parsing remains intentionally narrower than forward generation.
 - The supported runtime implementation now lives entirely inside the `PepLink/` package.
 - Custom non-canonical amino-acid registrations are process-local runtime state.
+
+## Citation
+
+If you find this project useful, please cite:
+
+```bibtex
+@article{leng2025predicting,
+  title={Predicting and generating antibiotics against future pathogens with ApexOracle},
+  author={Leng, Tianang and Wan, Fangping and Torres, Marcelo Der Torossian and de la Fuente-Nunez, Cesar},
+  journal={arXiv preprint arXiv:2507.07862},
+  year={2025}
+}
+```

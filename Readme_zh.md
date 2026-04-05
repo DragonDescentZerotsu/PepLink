@@ -575,3 +575,16 @@ smiles = aa_seqs_to_smiles(
 - 逆向解析的能力边界刻意比正向生成功能更窄。
 - 现在真正的运行时实现已经全部放进 `PepLink/` 包内部。
 - 自定义 non-canonical amino acid 注册是当前进程内的运行时状态。
+
+## 引用
+
+如果你觉得这个项目有用，请引用：
+
+```bibtex
+@article{leng2025predicting,
+  title={Predicting and generating antibiotics against future pathogens with ApexOracle},
+  author={Leng, Tianang and Wan, Fangping and Torres, Marcelo Der Torossian and de la Fuente-Nunez, Cesar},
+  journal={arXiv preprint arXiv:2507.07862},
+  year={2025}
+}
+```
