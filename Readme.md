@@ -13,7 +13,7 @@
 
 # PepLink
 
-PepLink is a Python package for peptide-to-structure conversion.
+PepLink is a Python package for peptide <-> molecular string conversion (`SMILES`/`SELFIES`).
 
 ## At A Glance
 
@@ -32,7 +32,7 @@ The 3 cyclic-peptide topology classes are:
 - `SMB`: sidechain-mainchain cyclization
 - `MMB`: mainchain-mainchain cyclization, including head-to-tail macrocyclization
 
-It currently focuses on one reliable v1 scope:
+It currently focuses on one reliable v1 scope centered on peptide <-> `SMILES`/`SELFIES` conversion:
 
 - `aa_seqs_to_smiles(...)`: monomer peptide definition -> `SMILES` or `SELFIES`
 - `smiles_to_aa_seqs(...)`: standard-amino-acid `SMILES` or `SELFIES` -> peptide sequence

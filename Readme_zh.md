@@ -13,7 +13,7 @@
 
 # PepLink
 
-PepLink 是一个面向 peptide 结构表示转换的 Python 包。
+PepLink 是一个面向 peptide 与分子字符串表示互转的 Python 包 (`SMILES`/`SELFIES`)。
 
 ## 一眼看懂支持范围
 
@@ -32,7 +32,7 @@ PepLink 是一个面向 peptide 结构表示转换的 Python 包。
 - `SMB`：sidechain-mainchain cyclization
 - `MMB`：mainchain-mainchain cyclization，其中包括 head-to-tail macrocyclization
 
-当前 v1 聚焦在一个边界清晰、可靠的范围内：
+当前 v1 聚焦在一个边界清晰、可靠的范围内，也就是 peptide 与 `SMILES`/`SELFIES` 的互转：
 
 - `aa_seqs_to_smiles(...)`：单链 peptide 定义 -> `SMILES` 或 `SELFIES`
 - `smiles_to_aa_seqs(...)`：标准氨基酸 peptide 的 `SMILES` 或 `SELFIES` -> peptide sequence
