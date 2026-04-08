@@ -158,6 +158,7 @@ def aa_seqs_to_smiles(
     n_terminal: str | None = None,
     c_terminal: str | None = None,
     output_format: str = "smiles",
+    kekule_smiles: bool = False,
     aa_overrides: Mapping[str, str] | None = None,
     n_terminal_overrides: Mapping[str, str] | None = None,
     c_terminal_overrides: Mapping[str, str] | None = None,
@@ -172,10 +173,12 @@ def aa_seqs_to_smiles(
         n_terminal_overrides=n_terminal_overrides,
         c_terminal_overrides=c_terminal_overrides,
     )
-    smiles = canonical_smiles(mol)
     if output_format == "smiles":
-        return smiles
+        return canonical_smiles(mol, kekule=kekule_smiles)
     if output_format == "selfies":
+        if kekule_smiles:
+            raise ValidationError("kekule_smiles is only supported when output_format='smiles'")
+        smiles = canonical_smiles(mol)
         if sf is None:
             raise MissingDependencyError("SELFIES output requires the optional 'selfies' dependency.")
         return sf.encoder(smiles)

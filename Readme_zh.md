@@ -197,6 +197,7 @@ aa_seqs_to_smiles(
     n_terminal=None,
     c_terminal=None,
     output_format="smiles",
+    kekule_smiles=False,
     aa_overrides=None,
     n_terminal_overrides=None,
     c_terminal_overrides=None,
@@ -210,6 +211,7 @@ aa_seqs_to_smiles(
 - `unusual_amino_acids` 的位置必须与 `X/x` 占位位置完全一致
 - `intrachain_bonds` 可以使用简化 dict，也可以直接传 DBAASP 风格嵌套 dict
 - `output_format` 只能是 `"smiles"` 或 `"selfies"`
+- `kekule_smiles=True` 会把 SMILES 输出从芳香写法切换为 Kekule 写法
 
 最小直接调用示例：
 
@@ -598,6 +600,20 @@ smiles = aa_seqs_to_smiles(
     n_terminal_overrides={"MyNCap": "CC(=O)O"},
     c_terminal_overrides={"MyCTail": "N"},
 )
+```
+
+### 请求 Kekule SMILES 输出
+
+```python
+smiles = aa_seqs_to_smiles(
+    "A",
+    n_terminal="Bz",
+    n_terminal_overrides={"Bz": "O=C(O)C1=CC=CC=C1"},
+    kekule_smiles=True,
+)
+
+print(smiles)
+# C[C@H](NC(=O)C1=CC=CC=C1)C(=O)O
 ```
 
 ## 说明

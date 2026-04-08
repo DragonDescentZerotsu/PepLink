@@ -9,9 +9,11 @@ import unittest
 from pathlib import Path
 
 from rdkit import RDLogger
+from rdkit import Chem
 
 from PepLink import (
     UnsupportedPeptideError,
+    ValidationError,
     aa_seqs_to_smiles,
     clear_registered_noncanonical_aas,
     from_dbaasp_record,
@@ -95,6 +97,29 @@ class AaSeqsToSmilesApiTests(unittest.TestCase):
         )
         self.assertIsInstance(smiles, str)
         self.assertTrue(smiles)
+
+    def test_kekule_smiles_output_is_optional(self) -> None:
+        aromatic = aa_seqs_to_smiles(
+            "A",
+            n_terminal="Bz",
+            n_terminal_overrides={"Bz": "O=C(O)C1=CC=CC=C1"},
+        )
+        kekule = aa_seqs_to_smiles(
+            "A",
+            n_terminal="Bz",
+            n_terminal_overrides={"Bz": "O=C(O)C1=CC=CC=C1"},
+            kekule_smiles=True,
+        )
+        self.assertEqual(aromatic, "C[C@H](NC(=O)c1ccccc1)C(=O)O")
+        self.assertEqual(kekule, "C[C@H](NC(=O)C1=CC=CC=C1)C(=O)O")
+        self.assertEqual(
+            Chem.MolToSmiles(Chem.MolFromSmiles(aromatic), canonical=True),
+            Chem.MolToSmiles(Chem.MolFromSmiles(kekule), canonical=True),
+        )
+
+    def test_kekule_smiles_is_rejected_for_selfies_output(self) -> None:
+        with self.assertRaises(ValidationError):
+            aa_seqs_to_smiles("AC", output_format="selfies", kekule_smiles=True)
 
     def test_multimer_and_coordination_records_are_rejected(self) -> None:
         with self.assertRaises(UnsupportedPeptideError):

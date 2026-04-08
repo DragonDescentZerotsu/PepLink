@@ -197,6 +197,7 @@ aa_seqs_to_smiles(
     n_terminal=None,
     c_terminal=None,
     output_format="smiles",
+    kekule_smiles=False,
     aa_overrides=None,
     n_terminal_overrides=None,
     c_terminal_overrides=None,
@@ -210,6 +211,7 @@ Key conventions:
 - `unusual_amino_acids` must match the placeholder positions exactly
 - `intrachain_bonds` can use either lightweight dicts or DBAASP-like nested dicts
 - `output_format` is either `"smiles"` or `"selfies"`
+- `kekule_smiles=True` switches SMILES output from aromatic notation to Kekule notation
 
 Minimal direct examples:
 
@@ -598,6 +600,20 @@ smiles = aa_seqs_to_smiles(
     n_terminal_overrides={"MyNCap": "CC(=O)O"},
     c_terminal_overrides={"MyCTail": "N"},
 )
+```
+
+### Request Kekule SMILES output
+
+```python
+smiles = aa_seqs_to_smiles(
+    "A",
+    n_terminal="Bz",
+    n_terminal_overrides={"Bz": "O=C(O)C1=CC=CC=C1"},
+    kekule_smiles=True,
+)
+
+print(smiles)
+# C[C@H](NC(=O)C1=CC=CC=C1)C(=O)O
 ```
 
 ## Notes

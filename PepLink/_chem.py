@@ -17,5 +17,10 @@ def normalize_smiles(smiles: str) -> str:
     return canonical_smiles(mol)
 
 
-def canonical_smiles(mol: Chem.Mol) -> str:
-    return Chem.MolToSmiles(normalize_mol(mol), canonical=True, isomericSmiles=True)
+def canonical_smiles(mol: Chem.Mol, *, kekule: bool = False) -> str:
+    return Chem.MolToSmiles(
+        normalize_mol(mol),
+        canonical=True,
+        isomericSmiles=True,
+        kekuleSmiles=kekule,
+    )
