@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,13 +22,16 @@ from PepLink.data import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+DATASET_PATH = Path(
+    os.environ.get("PEPLINK_TEST_DBAASP_JSON", ROOT / "all_peptides_data.json")
+)
 RDLogger.DisableLog("rdApp.*")
 
 
 class DataCoverageTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.dataset = json.loads((ROOT / "all_peptides_data.json").read_text())
+        cls.dataset = json.loads(DATASET_PATH.read_text())
 
     def tearDown(self) -> None:
         clear_registered_noncanonical_aas()

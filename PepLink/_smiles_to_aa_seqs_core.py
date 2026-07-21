@@ -104,7 +104,9 @@ AA_INNER_L = {
     'E': '[*:1]N[C@@H](CCC(=O)O)C(=O)[*:2]',
     'Q': '[*:1]N[C@@H](CCC(=O)N)C(=O)[*:2]',
     'G': '[*:1]NC(C(=O)[*:2])',
-    'H': '[*:1]N[C@@H](Cc1c[nH]cn1)C(=O)[*:2]',
+    # Match the imidazole tautomer emitted by the bundled forward mapping.
+    # The previous c1c[nH]cn1 template converted every H/h residue to X.
+    'H': '[*:1]N[C@@H](Cc1cnc[nH]1)C(=O)[*:2]',
     'L': '[*:1]N[C@@H](CC(C)C)C(=O)[*:2]',
     'I': '[*:1]N[C@@H](C(C)CC)C(=O)[*:2]',
     'K': '[*:1]N[C@@H](CCCCN)C(=O)[*:2]',
