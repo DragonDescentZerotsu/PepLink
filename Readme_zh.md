@@ -175,6 +175,9 @@ PepLink v1 的逆向解析是刻意保守的。
 - `SMILES` 输入
 - `SELFIES` 输入
 
+`0.1.2` 修复了 Histidine 的反向解析：reverse 模板现在匹配 forward converter 输出的
+canonical imidazole tautomer。
+
 以下情况不承诺支持逆向解析：
 
 - non-canonical amino acids

@@ -175,6 +175,9 @@ It officially supports:
 - `SMILES` input
 - `SELFIES` input
 
+Version `0.1.2` fixes Histidine reverse parsing by matching the canonical
+imidazole tautomer emitted by the forward converter.
+
 It does not promise reverse parsing for:
 
 - non-canonical amino acids

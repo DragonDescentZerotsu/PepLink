@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import importlib.util
+import os
 import subprocess
 import sys
 import tempfile
@@ -26,7 +27,10 @@ from PepLink import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DATASET = json.loads((ROOT / "all_peptides_data.json").read_text())
+DATASET_PATH = Path(
+    os.environ.get("PEPLINK_TEST_DBAASP_JSON", ROOT / "all_peptides_data.json")
+)
+DATASET = json.loads(DATASET_PATH.read_text())
 BY_ID = {item["id"]: item for item in DATASET}
 RDLogger.DisableLog("rdApp.*")
 
@@ -136,6 +140,29 @@ class SmilesToAaSeqsApiTests(unittest.TestCase):
         self.assertFalse(parsed.is_cyclic)
         self.assertEqual(parsed.cyclization, "linear")
         self.assertIsNone(parsed.unsupported_reason)
+
+    def test_histidine_tautomer_round_trip_preserves_l_and_d(self) -> None:
+        smiles = aa_seqs_to_smiles("Hh")
+        parsed = smiles_to_aa_seqs(smiles)
+        self.assertEqual(parsed.sequence, "Hh")
+        self.assertFalse(parsed.is_cyclic)
+        self.assertIsNone(parsed.unsupported_reason)
+
+        cyclic_smiles = aa_seqs_to_smiles(
+            "AHh",
+            intrachain_bonds=[
+                {
+                    "position1": 1,
+                    "position2": 3,
+                    "type": "AMD",
+                    "chain_participating": "MMB",
+                }
+            ],
+        )
+        cyclic = smiles_to_aa_seqs(cyclic_smiles)
+        self.assertIn(cyclic.sequence, cyclic_rotations("AHh"))
+        self.assertTrue(cyclic.is_cyclic)
+        self.assertIsNone(cyclic.unsupported_reason)
 
     def test_head_to_tail_round_trip(self) -> None:
         smiles = aa_seqs_to_smiles(**from_dbaasp_record(BY_ID[105]).to_api_kwargs())
