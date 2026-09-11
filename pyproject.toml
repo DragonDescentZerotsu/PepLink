@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PepLink"
-version = "0.1.2"
+version = "0.1.3"
 description = "Peptide <-> SMILES utilities for monomer peptides with non-canonical residues, terminal modifications, and selected cyclizations."
 readme = "Readme.md"
 requires-python = ">=3.9"

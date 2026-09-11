@@ -175,6 +175,24 @@ It officially supports:
 - `SMILES` input
 - `SELFIES` input
 
+Version `0.1.3` corrects 26 of the bundled non-canonical residue definitions.
+Some named a different compound than the record they stand for — `ARGol` shipped
+dipotassium tartrate rather than argininol, `CCA` a disodium diphenylamine
+dicarboxylate rather than cyclohexanecarboxylic acid, `Nspe` a nitrophenyl
+phosphonate rather than the peptoid glycine, and `Iaa` and `Iac` both shipped
+indole-3-acetic acid where the records name imidazole compounds. Others were
+written as free zwitterions, so residues that belong inside a chain, such as
+`Allo-Thr` and `LYS-(CH3)3`, could not form a peptide bond at all. Each
+correction is checked against the formula its source record states.
+
+Three definitions are known to be suspect and are deliberately left unchanged,
+because the evidence does not settle what they should be: `D-3-O-TRP`,
+`Di-P-Tyr`, and `LAP`, whose stated formula matches neither reading of its own
+name.
+
+Forward and reverse conversion behaviour is unchanged, so a peptide built only
+from correct definitions produces the same structure as in `0.1.2`.
+
 Version `0.1.2` fixes Histidine reverse parsing by matching the canonical
 imidazole tautomer emitted by the forward converter.
 
