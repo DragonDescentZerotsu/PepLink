@@ -175,6 +175,8 @@ It officially supports:
 - `SMILES` input
 - `SELFIES` input
 
+Version `0.1.4` fixes repeated RDKit explicit-valence deprecation warnings during peptide conversion and retains support for older RDKit versions.
+
 Version `0.1.3` corrects 26 of the bundled non-canonical residue definitions.
 Some named a different compound than the record they stand for — `ARGol` shipped
 dipotassium tartrate rather than argininol, `CCA` a disodium diphenylamine

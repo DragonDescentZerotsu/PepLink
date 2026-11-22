@@ -33,4 +33,4 @@ __all__ = [
     "smiles_to_aa_seqs",
 ]
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
