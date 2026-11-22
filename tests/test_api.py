@@ -60,6 +60,46 @@ class AaSeqsToSmilesApiTests(unittest.TestCase):
         self.assertEqual(result.stdout.strip(), "CC(=O)NCC(=O)O")
         self.assertNotIn("please use GetValence", result.stderr)
 
+    def test_noncanonical_backbone_products(self) -> None:
+        cases = [
+            ("XG", "OBU", "CCC(=O)C(=O)NCC(=O)O"),
+            ("GX", "N2H3-Gly", "NCC(=O)NCC(=O)NN"),
+            ("GXG", "Agb", "NCC(=O)NC(CCN=C(N)N)C(=O)NCC(=O)O"),
+            ("GXG", "Phg", "NCC(=O)N[C@@H](c1ccccc1)C(=O)NCC(=O)O"),
+            ("GXG", "DHA", "NCC(=O)NC(=C)C(=O)NCC(=O)O"),
+        ]
+        for sequence, name, expected in cases:
+            with self.subTest(sequence=sequence, name=name):
+                result = aa_seqs_to_smiles(
+                    sequence, unusual_amino_acids=[{"position": sequence.index("X") + 1, "name": name}],
+                )
+                self.assertEqual(result, Chem.MolToSmiles(Chem.MolFromSmiles(expected)))
+
+    def test_missing_linker_reports_residue_and_position(self) -> None:
+        for sequence, position, name, missing in [
+            ("GXG", 2, "OBU", "N-side"), ("GX", 2, "OBU", "N-side"),
+            ("XG", 1, "N2H3-Gly", "C-side"), ("GXG", 2, "N2H3-Gly", "C-side"),
+        ]:
+            with self.subTest(sequence=sequence, name=name):
+                with self.assertRaises(UnsupportedPeptideError) as error:
+                    aa_seqs_to_smiles(sequence, unusual_amino_acids=[{"position": position, "name": name}])
+                self.assertIn(f"Residue {position} ({name})", str(error.exception))
+                self.assertIn(missing, str(error.exception))
+
+    def test_free_carboxylate_is_a_c_side_linker(self) -> None:
+        self.assertEqual(
+            aa_seqs_to_smiles("XG", unusual_amino_acids=[{"position": 1, "name": "oxoacid"}],
+                              aa_overrides={"oxoacid": "CCC(=O)C(=O)[O-]"}),
+            "CCC(=O)C(=O)NCC(=O)O",
+        )
+
+    def test_dehydroalanine_amine_bridge(self) -> None:
+        result = aa_seqs_to_smiles(
+            "KX", unusual_amino_acids=[{"position": 2, "name": "DHA"}],
+            intrachain_bonds=[{"position1": 1, "position2": 2, "type": "AMN", "chain_participating": "SSB"}],
+        )
+        self.assertEqual(result, Chem.MolToSmiles(Chem.MolFromSmiles("N[C@H]1CCCCNCC(C(=O)O)NC1=O")))
+
     def test_examples_from_dataset(self) -> None:
         for record_id in SUPPORTED_FORWARD_IDS:
             with self.subTest(record_id=record_id):

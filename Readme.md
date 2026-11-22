@@ -113,6 +113,8 @@ from PepLink import register_noncanonical_aas_from_csv
 register_noncanonical_aas_from_csv("examples/example_custom_noncanonical_aas.csv")
 ```
 
+A residue needs an N-side linker to join the preceding residue and a free carboxyl group to join the next one. For example, `OBU` can start a chain, and `N2H3-Gly` can end one. A missing linker raises `UnsupportedPeptideError` with the residue name and position.
+
 ## Supported Scope
 
 ### `aa_seqs_to_smiles(...)`

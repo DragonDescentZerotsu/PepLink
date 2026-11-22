@@ -7,6 +7,16 @@ import csv
 import json
 
 from ._chem import _explicit_valence
+from .exceptions import UnsupportedPeptideError
+
+
+# Match the acyl carbon and its removable hydroxyl or carboxylate oxygen.
+_CARBOXYL_GROUP = "[C;X3](=[O;X1])-[O&H1&+0,O&H0&-1]"
+_FREE_CARBOXYL = Chem.MolFromSmarts("[#6]-" + _CARBOXYL_GROUP)
+_PRIMARY_BACKBONE = Chem.MolFromSmarts("[N;D1]-[#6]-" + _CARBOXYL_GROUP)
+_FREE_AMINE = Chem.MolFromSmarts("[N;X3;!H0;+0;!$(N-[C,S,P]=[O,S,N])]-[#6]")
+_DEHYDROALANINE = Chem.MolFromSmarts("[C;D1]=C(-N)-C(=O)")
+
 
 class AAs(object):
     """
@@ -27,275 +37,48 @@ class AAs(object):
         self.rw_C_terminal_atom = None
         self.N_dummy = None
         self.C_dummy = None
-        # 初始化找到N、C端原子
-        self._init_aa()
-
-    def _init_aa(self):
-        """
-        找到 N 端氮原子和 C 端碳原子并存储到属性里
-        :return:
-        """
         self.find_N_C_terminal_atoms()
 
     def find_N_C_terminal_atoms(self):
-        """
-        找到分子中符合条件的 N 端氮原子和 C 端碳原子。
-        :return: N_terminal_idx, C_terminal_idx
-        """
-        N_terminal_atom, C_terminal_atom = self.strict_find_N_C_terminal_atoms()
-        if N_terminal_atom is None or C_terminal_atom is None:
-            N_terminal_atom, C_terminal_atom = self.loose_find_N_C_terminal_atoms()
-        if N_terminal_atom is None and C_terminal_atom is None:
-            print(f'\n{self.idx}: {self.smiles}: Failed to find N terminal atom and C terminal atom')
-        elif N_terminal_atom is None and C_terminal_atom is not None:
-            print(f'\n{self.idx}: {self.smiles}: Failed to find N terminal atom')
-        elif N_terminal_atom is not None and C_terminal_atom is None:
-            print(f'\n{self.idx}: {self.smiles}: Failed to find C terminal atom')
-        self.N_terminal_atom = N_terminal_atom
-        self.C_terminal_atom = C_terminal_atom
+        """Prefer an alpha-amino backbone, then the nearest candidate nitrogen."""
+        primary = self.mol.GetSubstructMatch(_PRIMARY_BACKBONE)
+        if primary:
+            self.N_terminal_atom = self.mol.GetAtomWithIdx(primary[0])
+            self.C_terminal_atom = self.mol.GetAtomWithIdx(primary[2])
+        else:
+            self.N_terminal_atom, self.C_terminal_atom = self._find_other_termini()
 
-    def strict_find_N_C_terminal_atoms(self):
-        """
-        找到分子中符合条件的 N 端氮原子和 C 端碳原子。
-        条件：
-          - C 端碳的 degree 必须是 3，并且三个邻居分别是两个氧和一个碳。
-          - C 端碳的两跳邻居中包含满足条件的氮原子，氮和 C 端碳之间必须通过碳相连。
-          - 满足条件的 N 端氮原子必须至少连接两个氢。
-        :param mol: RDKit 的分子对象
-        :return: (N_terminal_idx, C_terminal_idx)
-        """
-        N_terminal_atom = None
-        C_terminal_atom = None
+        if self.N_terminal_atom is not None:
+            self.N_terminal_atom.SetProp("N_terminal", "True")
+        if self.C_terminal_atom is not None:
+            self.C_terminal_atom.SetProp("C_terminal", "True")
 
-        for atom in self.mol.GetAtoms():
-            # 识别符合 C 端碳条件的原子：碳，degree=3，并且邻居包括两个氧和一个碳
-            if atom.GetSymbol() == "C" and atom.GetDegree() == 3:
-                oxygen_count = 0
-                carbon_neighbor = None
-                double_bond_to_oxygen = False
-                _OH_exists = False
+    def _find_other_termini(self):
+        carboxyls = self.mol.GetSubstructMatches(_FREE_CARBOXYL)
+        if not carboxyls:
+            # A blocked C terminus may still accept a bond at its amino nitrogen.
+            amine = self.mol.GetSubstructMatch(_FREE_AMINE)
+            return (self.mol.GetAtomWithIdx(amine[0]) if amine else None), None
 
-                # 遍历 C 端碳的邻居
-                for neighbor in atom.GetNeighbors():
-                    if neighbor.GetSymbol() == "O":
-                        oxygen_count += 1
-                        # 检查与氧的键类型是否为双键
-                        bond = self.mol.GetBondBetweenAtoms(atom.GetIdx(), neighbor.GetIdx())
-                        if bond.GetBondType() == Chem.rdchem.BondType.DOUBLE:
-                            double_bond_to_oxygen = True
-                        if bond.GetBondType() == Chem.rdchem.BondType.SINGLE:
-                            if neighbor.GetDegree() == 1:
-                                _OH_exists = True
-                    elif neighbor.GetSymbol() == "C":
-                        carbon_neighbor = neighbor
+        nitrogens = [atom for atom in self.mol.GetAtoms() if atom.GetAtomicNum() == 7]
+        if not nitrogens:
+            return None, self.mol.GetAtomWithIdx(carboxyls[0][1])
 
-                # 确保有两个氧和一个碳邻居，且一个氧通过双键连接, 通过单键连接的 O 必须是只有 1 个neighbour的 -OH
-                if oxygen_count == 2 and carbon_neighbor is not None and double_bond_to_oxygen and _OH_exists:
-                    # 检查 C 端碳的两跳邻居中的氮原子
-                    found_N_terminal = False
-                    for two_hop_neighbor in carbon_neighbor.GetNeighbors():
-                        if two_hop_neighbor.GetSymbol() == "N" and two_hop_neighbor.GetDegree() == 1:
-                            # 确保 N 端氮只有一个邻居，且是 carbon_neighbor
-                            if two_hop_neighbor.GetNeighbors()[0].GetIdx() == carbon_neighbor.GetIdx():
-                                # 找到符合条件的 N 端氮和 C 端碳
-                                C_terminal_atom = atom
-                                N_terminal_atom = two_hop_neighbor
-                                found_N_terminal = True
-                                break
+        alpha_carbons = {match[0] for match in carboxyls}
+        candidates = []
+        for atom in nitrogens:
+            neighbors = atom.GetNeighbors()
+            if atom.GetDegree() == 1 and neighbors[0].GetAtomicNum() == 6:
+                candidates.append(atom)
+            elif _explicit_valence(atom) < 3 and any(n.GetIdx() in alpha_carbons for n in neighbors):
+                candidates.append(atom)
 
-                    # 如果找到合格的 N 端氮，退出循环
-                    if found_N_terminal:
-                        break
-        if N_terminal_atom is not None and C_terminal_atom is not None:
-            N_terminal_atom.SetProp('N_terminal', 'True')
-            C_terminal_atom.SetProp('C_terminal', 'True')
-        return N_terminal_atom, C_terminal_atom
-
-    def loose_find_N_C_terminal_atoms(self):
-        """
-        找到分子中符合条件的最接近的 N 端氮原子和 C 端碳原子。
-        条件：
-          - C 端碳的 degree 必须是 3，并且三个邻居分别是两个氧和一个碳。
-          - 满足条件的 N 端氮原子必须 degree 为 1，且唯一的邻居是一个碳原子。
-
-          - 没有标准的 C 端就找一个任意有 -OH 连接的 C 或者是其他原子
-          - 没有标准的 N 端就找一个离 羧基 C 最近的 N
-        :param mol: RDKit 的分子对象
-        :return: (N_terminal_idx, C_terminal_idx)
-        """
-        # 存储符合条件的 C 端碳和 N 端氮的索引
-        candidate_C_atoms_idx = []
-        candidate_N_atoms_idx = []
-
-        # 没有标准的 N 端就找一个离 羧基 C 最近的 N
-        more_loose_candidate_N_atoms_idx = []
-
-        # 没有标准的 C 端就找一个任意有 -OH 连接的 C 或者是其他原子
-        more_loose_candidate_C_atoms_idx = []
-
-        # 遍历分子中的所有原子，寻找符合条件的 C 端碳和 N 端氮
-        for atom in self.mol.GetAtoms():
-            # 符合 C 端碳的条件：degree 为 3，且有两个氧和一个碳邻居
-            if atom.GetSymbol() == "C" and atom.GetDegree() == 3:
-                oxygen_count = 0
-                carbon_neighbor = None
-                double_bond_to_oxygen = False
-                _OH_exists = False
-
-                # 遍历 C 端碳的邻居
-                for neighbor in atom.GetNeighbors():
-                    if neighbor.GetSymbol() == "O":
-                        oxygen_count += 1
-                        # 检查与氧的键类型是否为双键
-                        bond = self.mol.GetBondBetweenAtoms(atom.GetIdx(), neighbor.GetIdx())
-                        if bond.GetBondType() == Chem.rdchem.BondType.DOUBLE:
-                            double_bond_to_oxygen = True
-                        if bond.GetBondType() == Chem.rdchem.BondType.SINGLE:
-                            if neighbor.GetDegree() == 1:
-                                _OH_exists = True
-                    elif neighbor.GetSymbol() == "C":
-                        carbon_neighbor = neighbor
-
-                # 确保有两个氧邻居、一个碳邻居，且一个氧通过双键连接, 通过单键连接的 O 必须是只有 1 个neighbour的 -OH
-                if oxygen_count == 2 and carbon_neighbor is not None and double_bond_to_oxygen and _OH_exists:
-                    candidate_C_atoms_idx.append(atom.GetIdx())
-                    for two_hop_neighbor in carbon_neighbor.GetNeighbors():
-                        if two_hop_neighbor.GetSymbol() == "N" and _explicit_valence(two_hop_neighbor) < 3:
-                            candidate_N_atoms_idx.append(two_hop_neighbor.GetIdx())
-                            break
-
-
-            # 符合 N 端氮的条件：degree 为 1，且唯一的邻居是碳原子
-            elif atom.GetSymbol() == "N" and atom.GetDegree() == 1:
-                neighbors = atom.GetNeighbors()
-                if len(neighbors) == 1 and neighbors[0].GetSymbol() == "C":
-                    candidate_N_atoms_idx.append(atom.GetIdx())
-
-        # 初始化最短路径和对应的原子对
-        shortest_distance = float('inf')
-        N_terminal_atom = None
-        C_terminal_atom = None
-
-        # 遍历所有候选对，计算跳数距离
-        if len(candidate_C_atoms_idx) > 0 and len(candidate_N_atoms_idx) > 0:
-            for c_idx in candidate_C_atoms_idx:
-                for n_idx in candidate_N_atoms_idx:
-                    # 计算跳数距离
-                    distance = len(rdmolops.GetShortestPath(self.mol, c_idx, n_idx))
-                    if distance < shortest_distance:
-                        shortest_distance = distance
-                        N_terminal_atom = self.mol.GetAtomWithIdx(n_idx)
-                        C_terminal_atom = self.mol.GetAtomWithIdx(c_idx)
-
-        # 如果没有标准意义上的N端N原子, 找到所有的N原子
-        elif len(candidate_C_atoms_idx) > 0 and len(candidate_N_atoms_idx) == 0:
-            for atom in self.mol.GetAtoms():
-                if atom.GetSymbol() == "N":
-                    more_loose_candidate_N_atoms_idx.append(atom.GetIdx())
-            for c_idx in candidate_C_atoms_idx:
-                for n_idx in more_loose_candidate_N_atoms_idx:
-                    # 计算跳数距离
-                    distance = len(rdmolops.GetShortestPath(self.mol, c_idx, n_idx))
-                    if distance < shortest_distance:
-                        shortest_distance = distance
-                        N_terminal_atom = self.mol.GetAtomWithIdx(n_idx)
-                        C_terminal_atom = self.mol.GetAtomWithIdx(c_idx)
-
-        # 如果没有标准意义上的 C 端 C 原子, 找到所有的有 -OH 连接的 C 原子或其他原子作为替代的 C 端 C 原子
-        elif len(candidate_C_atoms_idx) == 0 and len(candidate_N_atoms_idx) > 0:
-            for atom in self.mol.GetAtoms():
-                if atom.GetSymbol() == "O" and atom.GetDegree() == 1:
-                    more_loose_candidate_C_atoms_idx.append(atom.GetNeighbors()[0].GetIdx())
-
-            # 由于一个原子上可能连接两个 -OH 所以用 set 去重
-            more_loose_candidate_C_atoms_idx = list(set(more_loose_candidate_C_atoms_idx))
-            for c_idx in more_loose_candidate_C_atoms_idx:
-                for n_idx in candidate_N_atoms_idx:
-                    # 计算跳数距离
-                    distance = len(rdmolops.GetShortestPath(self.mol, c_idx, n_idx))
-                    if distance < shortest_distance:
-                        shortest_distance = distance
-                        N_terminal_atom = self.mol.GetAtomWithIdx(n_idx)
-                        C_terminal_atom = self.mol.GetAtomWithIdx(c_idx)
-
-        # 如果没有标准意义上的 C 端 C 原子和 N 端 N 原子
-        elif len(candidate_C_atoms_idx) == 0 and len(candidate_N_atoms_idx) == 0:
-            for atom in self.mol.GetAtoms():
-                if atom.GetSymbol() == "O" and atom.GetDegree() == 1:
-                    more_loose_candidate_C_atoms_idx.append(atom.GetNeighbors()[0].GetIdx())
-                if atom.GetSymbol() == "N":
-                    more_loose_candidate_N_atoms_idx.append(atom.GetIdx())
-
-            # 由于一个原子上可能连接两个 -OH 所以用 set 去重
-            more_loose_candidate_C_atoms_idx = list(set(more_loose_candidate_C_atoms_idx))
-            for c_idx in more_loose_candidate_C_atoms_idx:
-                for n_idx in more_loose_candidate_N_atoms_idx:
-                    # 计算跳数距离
-                    distance = len(rdmolops.GetShortestPath(self.mol, c_idx, n_idx))
-                    if distance < shortest_distance:
-                        shortest_distance = distance
-                        N_terminal_atom = self.mol.GetAtomWithIdx(n_idx)
-                        C_terminal_atom = self.mol.GetAtomWithIdx(c_idx)
-
-        # 到这里都还没有找到 C 和 N 只能说明是没有 C 或者没有 N
-        # 这里只去找一个，即C端或者N端
-        if N_terminal_atom is None and C_terminal_atom is None:
-            for atom in self.mol.GetAtoms():
-
-                # 这里 C 端的标准依旧是只要有 -OH 连接就行
-                if atom.GetSymbol() == "O" and atom.GetDegree() == 1:
-                    more_loose_candidate_C_atoms_idx.append(atom.GetNeighbors()[0].GetIdx())
-                if atom.GetSymbol() == "N":
-                    more_loose_candidate_N_atoms_idx.append(atom.GetIdx())
-
-            # 由于一个原子上可能连接两个 -OH 所以用 set 去重
-            more_loose_candidate_C_atoms_idx = list(set(more_loose_candidate_C_atoms_idx))
-
-            def find_atom_with_lowest_volancy(idx_list, mol, find_max = False):
-                """
-                找到 index list 中 volancy 最小或最大的原子的 index 返回
-                :param idx_list: C_termianl_idx_list 或者 N_termianl_idx_list
-                :param mol: 分子对象
-                :param find_max: 是否返回 valency 最大的原子
-                :return: idx of min valency
-                """
-                min_volancy = float('inf')
-                max_valency = 0
-                idx_of_min_valency = 0
-
-                for idx in idx_list:
-                    atom = mol.GetAtomWithIdx(idx)
-                    explicit_valence = _explicit_valence(atom)  # 显式电子配位数
-                    if find_max:
-                        if explicit_valence > max_valency:
-                            max_valency = explicit_valence
-                            idx_of_min_valency = idx
-                    else:
-                        if explicit_valence < min_volancy:
-                            min_volancy = explicit_valence
-                            idx_of_min_valency = idx
-
-                return idx_of_min_valency
-
-            # 如果有 C 端原子
-            if len(more_loose_candidate_C_atoms_idx) > 0:
-
-                # 选取valency最大的作为 C 端原子
-                min_valency_idx = find_atom_with_lowest_volancy(more_loose_candidate_C_atoms_idx, self.mol, find_max = True)
-                C_terminal_atom = self.mol.GetAtomWithIdx(min_valency_idx)
-
-            elif len(more_loose_candidate_N_atoms_idx) > 0:
-                # 选取valency最小的作为 N 端原子
-                min_valency_idx = find_atom_with_lowest_volancy(more_loose_candidate_N_atoms_idx, self.mol)
-                N_terminal_atom = self.mol.GetAtomWithIdx(min_valency_idx)
-
-
-        if N_terminal_atom is not None:
-            N_terminal_atom.SetProp('N_terminal', 'True')
-        if C_terminal_atom is not None:
-            C_terminal_atom.SetProp('C_terminal', 'True')
-        return N_terminal_atom, C_terminal_atom
-
+        paths = (rdmolops.GetShortestPath(self.mol, match[1], atom.GetIdx())
+                 for match in carboxyls for atom in (candidates or nitrogens))
+        shortest = min((path for path in paths if path), key=len, default=())
+        if shortest:
+            return self.mol.GetAtomWithIdx(shortest[-1]), self.mol.GetAtomWithIdx(shortest[0])
+        return None, None
 
     def add_dummy_atoms(self, is_n_terminal: bool=False, is_c_terminal: bool=False):
         """
@@ -434,7 +217,8 @@ class Peptide(object):
 
             # 记录处理到第几个 x 或者 X 了
             unusual_aas_count = 0
-            for residue, aa in enumerate(seq.strip()):
+            seq = seq.strip()
+            for residue, aa in enumerate(seq):
                 if aa == 'X' or aa == 'x':
                     # 提取对应的 non-canonical 氨基酸
                     try:
@@ -461,6 +245,10 @@ class Peptide(object):
                     AA = AAs(aa_smiles_dict[aa], idx=aa, one_letter_code=aa)
 
                 # 为每个原子添加 'residue' 属性
+                if residue > 0 and AA.N_terminal_atom is None:
+                    raise UnsupportedPeptideError(f"Residue {residue + 1} ({AA.idx}) lacks a required N-side linker")
+                if residue + 1 < len(seq) and AA.C_terminal_atom is None:
+                    raise UnsupportedPeptideError(f"Residue {residue + 1} ({AA.idx}) lacks a free C-side carboxyl group")
                 AA.add_position_property(residue+1)
                 AAs_seq.append(AA)
             return AAs_seq
@@ -1790,6 +1578,21 @@ class Peptide(object):
                         else:
                             positions.remove(position2)
                             link_atom_2_index = oxygen_atom.GetNeighbors()[0].GetIdx()
+
+                    # An amine can also add to the beta carbon of dehydroalanine.
+                    if N_min_valence_idx is not None and len(positions) == 1:
+                        for beta, alpha, nitrogen, carbonyl, _ in rw_main_chain_linked_mol.GetSubstructMatches(_DEHYDROALANINE):
+                            if int(rw_main_chain_linked_mol.GetAtomWithIdx(beta).GetProp("residue")) != positions[0]:
+                                continue
+                            if not (rw_main_chain_linked_mol.GetAtomWithIdx(nitrogen).HasProp("N_terminal")
+                                    and rw_main_chain_linked_mol.GetAtomWithIdx(carbonyl).HasProp("C_terminal")):
+                                continue
+                            rw_main_chain_linked_mol.GetBondBetweenAtoms(beta, alpha).SetBondType(Chem.BondType.SINGLE)
+                            if positions[0] == position1:
+                                link_atom_1_index = beta
+                            else:
+                                link_atom_2_index = beta
+                            break
 
                 if chainParticipating == 'SMB':
 
