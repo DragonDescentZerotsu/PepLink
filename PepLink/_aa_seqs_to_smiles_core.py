@@ -6,6 +6,8 @@ from typing import Union, List, Dict
 import csv
 import json
 
+from ._chem import _explicit_valence
+
 class AAs(object):
     """
     氨基酸类，获得N、C端原子对象和可编辑分子对象
@@ -158,7 +160,7 @@ class AAs(object):
                 if oxygen_count == 2 and carbon_neighbor is not None and double_bond_to_oxygen and _OH_exists:
                     candidate_C_atoms_idx.append(atom.GetIdx())
                     for two_hop_neighbor in carbon_neighbor.GetNeighbors():
-                        if two_hop_neighbor.GetSymbol() == "N" and two_hop_neighbor.GetExplicitValence() < 3:
+                        if two_hop_neighbor.GetSymbol() == "N" and _explicit_valence(two_hop_neighbor) < 3:
                             candidate_N_atoms_idx.append(two_hop_neighbor.GetIdx())
                             break
 
@@ -263,7 +265,7 @@ class AAs(object):
 
                 for idx in idx_list:
                     atom = mol.GetAtomWithIdx(idx)
-                    explicit_valence = atom.GetExplicitValence()  # 显式电子配位数
+                    explicit_valence = _explicit_valence(atom)  # 显式电子配位数
                     if find_max:
                         if explicit_valence > max_valency:
                             max_valency = explicit_valence
@@ -527,7 +529,7 @@ class Peptide(object):
         :return: bool
         """
         atom = rw_main_chain_linked_mol.GetAtomWithIdx(atom_idx)
-        if atom.GetSymbol() == "C" and atom.GetDegree() == 3 and atom.GetExplicitValence() == 4 and not atom.HasProp('C_terminal'):
+        if atom.GetSymbol() == "C" and atom.GetDegree() == 3 and _explicit_valence(atom) == 4 and not atom.HasProp('C_terminal'):
             O_count = 0  # 氧原子计数
             double_bond_to_oxygen = False  # 是否找到双键 O
             for neighbor in atom.GetNeighbors():
@@ -705,7 +707,7 @@ class Peptide(object):
                         
                         if int(atom.GetProp('residue')) in positions:
                             # 侧脸羧基 -COOH 的条件，度为3，配位数为4，并且没有 C_terminal 属性，同时还要求两个 O 邻居，其中一个是双键
-                            if atom.GetSymbol() == "C" and atom.GetDegree() == 3 and atom.GetExplicitValence() == 4 and not atom.HasProp('C_terminal') and not C_found:
+                            if atom.GetSymbol() == "C" and atom.GetDegree() == 3 and _explicit_valence(atom) == 4 and not atom.HasProp('C_terminal') and not C_found:
                                 O_count = 0  # 氧原子计数
                                 double_bond_to_oxygen = False  # 是否找到双键 O
                                 for neighbor in atom.GetNeighbors():
@@ -737,10 +739,10 @@ class Peptide(object):
                     for atom in rw_main_chain_linked_mol.GetAtoms():
                         if int(atom.GetProp('residue')) in positions:
                             # 寻找 N 原子，标准是不能在主链上且配位数要小于3
-                            if atom.GetSymbol() == "N" and atom.GetExplicitValence() < 3 and not atom.HasProp('N_terminal'):
+                            if atom.GetSymbol() == "N" and _explicit_valence(atom) < 3 and not atom.HasProp('N_terminal'):
                                 # 一个氨基酸侧链上可能有很多 N 原子，选配位数最少的那个
-                                if atom.GetExplicitValence() < N_found_min_valency:
-                                    N_found_min_valency = atom.GetExplicitValence()
+                                if _explicit_valence(atom) < N_found_min_valency:
+                                    N_found_min_valency = _explicit_valence(atom)
                                     if int(atom.GetProp('residue')) == position1:
                                         link_atom_1_index = atom.GetIdx()
                                     else:
@@ -774,11 +776,11 @@ class Peptide(object):
                         for atom in rw_main_chain_linked_mol.GetAtoms():
                             if int(atom.GetProp('residue')) in positions:
                                 # 寻找 N 原子，标准是不能在主链上且配位数要小于3
-                                if atom.GetSymbol() == "N" and atom.GetExplicitValence() < 3 and not atom.HasProp('N_terminal'):
+                                if atom.GetSymbol() == "N" and _explicit_valence(atom) < 3 and not atom.HasProp('N_terminal'):
                                     side_N_found = True
                                     # 一个氨基酸侧链上可能有很多 N 原子，选配位数最少的那个
-                                    if atom.GetExplicitValence() < N_found_min_valency:
-                                        N_found_min_valency = atom.GetExplicitValence()
+                                    if _explicit_valence(atom) < N_found_min_valency:
+                                        N_found_min_valency = _explicit_valence(atom)
                                         if int(atom.GetProp('residue')) == position1:
                                             link_atom_1_index = atom.GetIdx()
                                         else:
@@ -796,7 +798,7 @@ class Peptide(object):
                         for atom in rw_main_chain_linked_mol.GetAtoms():
                             # 寻找侧链 -COOH
                             if int(atom.GetProp('residue')) in positions:
-                                if atom.GetSymbol() == "C" and atom.GetDegree() == 3 and atom.GetExplicitValence() == 4 and not atom.HasProp('C_terminal') and not side_C_found:
+                                if atom.GetSymbol() == "C" and atom.GetDegree() == 3 and _explicit_valence(atom) == 4 and not atom.HasProp('C_terminal') and not side_C_found:
                                     O_count = 0  # 氧原子计数
                                     double_bond_to_oxygen = False  # 是否找到双键 O
                                     for neighbor in atom.GetNeighbors():
@@ -909,8 +911,8 @@ class Peptide(object):
                 side_COOH_OH_idx_list = []
                 oxygen_idx_to_remove = None
                 for atom in rw_main_chain_linked_mol.GetAtoms():
-                    # 注意这里一定要是 atom.GetExplicitValence() == 1 而不是 degree=1，因为双键O也是只有一个邻居
-                    if atom.GetSymbol() == 'O' and atom.GetExplicitValence() == 1 and int(atom.GetProp('residue')) in positions:
+                    # 注意这里一定要是 _explicit_valence(atom) == 1 而不是 degree=1，因为双键O也是只有一个邻居
+                    if atom.GetSymbol() == 'O' and _explicit_valence(atom) == 1 and int(atom.GetProp('residue')) in positions:
                         hydroxyl_idx_list.append(atom.GetIdx())
 
                 # 如果不止一个 -OH ，那可能有 -COOH 或者不止一个 -OH, 尝试去掉其中的 -COOH 中的 -OH
@@ -920,7 +922,7 @@ class Peptide(object):
                         oxygen_atom = rw_main_chain_linked_mol.GetAtomWithIdx(hydroxyl_idx)
                         oxygen_neighbor_atom = oxygen_atom.GetNeighbors()[0]
                         # 检查这个邻居是否是 -COOH 中的 C 原子
-                        if oxygen_neighbor_atom.GetSymbol() == "C" and oxygen_neighbor_atom.GetDegree() == 3 and oxygen_neighbor_atom.GetExplicitValence() == 4 and not oxygen_neighbor_atom.HasProp('C_terminal'):
+                        if oxygen_neighbor_atom.GetSymbol() == "C" and oxygen_neighbor_atom.GetDegree() == 3 and _explicit_valence(oxygen_neighbor_atom) == 4 and not oxygen_neighbor_atom.HasProp('C_terminal'):
                             O_count = 0  # 氧原子计数
                             double_bond_to_oxygen = False  # 是否找到双键 O
                             for neighbor in oxygen_neighbor_atom.GetNeighbors():
@@ -968,7 +970,7 @@ class Peptide(object):
                 # 如果连 -COOH 上的 -OH 也没有找到，那可能是 SMB，找 C dummy atom
                 if len(hydroxyl_idx_list) == 0 and len(side_COOH_OH_idx_list) == 0:
                     for atom in rw_main_chain_linked_mol.GetAtoms():
-                        # 注意这里一定要是 atom.GetExplicitValence() == 1 而不是 degree=1，因为双键O也是只有一个邻居
+                        # 注意这里一定要是 _explicit_valence(atom) == 1 而不是 degree=1，因为双键O也是只有一个邻居
                         if atom.GetSymbol() == '*' and atom.HasProp('C_dummy') and int(atom.GetProp('residue')) in positions:
                             dummy_atoms_idxs_to_remove.append(atom.GetIdx())
                             if int(atom.GetProp('residue')) == position1:
@@ -1038,7 +1040,7 @@ class Peptide(object):
 
                 for atom in rw_main_chain_linked_mol.GetAtoms():
                     # 判断最外面双键 =C 的规则很简单：只有一个邻居，并且 valence 是2
-                    if atom.GetSymbol() == 'C' and atom.GetDegree() == 1 and atom.GetExplicitValence() == 2 and int(atom.GetProp('residue')) in positions:
+                    if atom.GetSymbol() == 'C' and atom.GetDegree() == 1 and _explicit_valence(atom) == 2 and int(atom.GetProp('residue')) in positions:
                         if int(atom.GetProp('residue')) == position1:
                             # 匹配到一个之后就把 position1 或者 position2 删掉防止重复匹配
                             positions.remove(position1)
@@ -1142,8 +1144,8 @@ class Peptide(object):
                     side_COOH_OH_idx_list = []
                     oxygen_idx_to_remove = None
                     for atom in rw_main_chain_linked_mol.GetAtoms():
-                        # 注意这里一定要是 atom.GetExplicitValence() == 1 而不是 degree=1，因为双键O也是只有一个邻居
-                        if atom.GetSymbol() == 'O' and atom.GetExplicitValence() == 1 and int(atom.GetProp('residue')) in positions:
+                        # 注意这里一定要是 _explicit_valence(atom) == 1 而不是 degree=1，因为双键O也是只有一个邻居
+                        if atom.GetSymbol() == 'O' and _explicit_valence(atom) == 1 and int(atom.GetProp('residue')) in positions:
                             hydroxyl_idx_list.append(atom.GetIdx())
 
                     # 如果不止一个 -OH ，那可能有 -COOH 或者不止一个 -OH, 尝试去掉其中的 -COOH 中的 -OH
@@ -1153,7 +1155,7 @@ class Peptide(object):
                             oxygen_atom = rw_main_chain_linked_mol.GetAtomWithIdx(hydroxyl_idx)
                             oxygen_neighbor_atom = oxygen_atom.GetNeighbors()[0]
                             # 检查这个邻居是否是 -COOH 中的 C 原子
-                            if oxygen_neighbor_atom.GetSymbol() == "C" and oxygen_neighbor_atom.GetDegree() == 3 and oxygen_neighbor_atom.GetExplicitValence() == 4 and not oxygen_neighbor_atom.HasProp('C_terminal'):
+                            if oxygen_neighbor_atom.GetSymbol() == "C" and oxygen_neighbor_atom.GetDegree() == 3 and _explicit_valence(oxygen_neighbor_atom) == 4 and not oxygen_neighbor_atom.HasProp('C_terminal'):
                                 O_count = 0  # 氧原子计数
                                 double_bond_to_oxygen = False  # 是否找到双键 O
                                 for neighbor in oxygen_neighbor_atom.GetNeighbors():
@@ -1264,7 +1266,7 @@ class Peptide(object):
                 for atom in rw_p_Xylene_mol.GetAtoms():
                     # 单独添加的分子都是 residue = 0
                     atom.SetProp('residue', '0')
-                    if atom.GetExplicitValence() == 1:
+                    if _explicit_valence(atom) == 1:
                         CH3_idxs.append(atom.GetIdx())
                 p_Xulene_link_atom_idx_1, p_Xulene_link_atom_idx_2 = CH3_idxs
 
@@ -1344,7 +1346,7 @@ class Peptide(object):
                 alkyne_idx_near_C = None  # 离 C 更近的炔的那个 C 原子的 idx
                 alkyne_idx_far_C = None
                 for atom in rw_main_chain_linked_mol.GetAtoms():
-                    if int(atom.GetProp('residue')) in positions and atom.GetSymbol() == 'C' and atom.GetDegree() == 2 and atom.GetExplicitValence() == 4:
+                    if int(atom.GetProp('residue')) in positions and atom.GetSymbol() == 'C' and atom.GetDegree() == 2 and _explicit_valence(atom) == 4:
                         alkyne_idx_near_C = atom.GetIdx()
                         for neighbor in atom.GetNeighbors():
                             bond = rw_main_chain_linked_mol.GetBondBetweenAtoms(neighbor.GetIdx(), alkyne_idx_near_C)
@@ -1366,7 +1368,7 @@ class Peptide(object):
                 N3_idx_near_C = None  # 离 C 更近的炔的那个 N 原子的 idx
                 N3_idx_far_C = None
                 for atom in rw_main_chain_linked_mol.GetAtoms():
-                    if int(atom.GetProp('residue')) in positions and atom.GetSymbol() == 'N' and atom.GetDegree() == 2 and atom.GetExplicitValence() == 4:
+                    if int(atom.GetProp('residue')) in positions and atom.GetSymbol() == 'N' and atom.GetDegree() == 2 and _explicit_valence(atom) == 4:
                         N3_idx_mid = atom.GetIdx()
                         # 去掉电荷
                         atom.SetFormalCharge(0)
@@ -1437,7 +1439,7 @@ class Peptide(object):
                 for atom in rw_E_but_2_enyl_mol.GetAtoms():
                     # 单独添加的分子都是 residue = 0
                     atom.SetProp('residue', '0')
-                    if atom.GetExplicitValence() == 1:
+                    if _explicit_valence(atom) == 1:
                         CH3_idxs.append(atom.GetIdx())
                 E_but_2_enyl_link_atom_idx_1, E_but_2_enyl_link_atom_idx_2 = CH3_idxs
 
@@ -1526,7 +1528,7 @@ class Peptide(object):
                 for atom in rw_E_but_2_enyl_mol.GetAtoms():
                     # 单独添加的分子都是 residue = 0
                     atom.SetProp('residue', '0')
-                    if atom.GetExplicitValence() == 1:
+                    if _explicit_valence(atom) == 1:
                         CH3_idxs.append(atom.GetIdx())
                 E_but_2_enyl_link_atom_idx_1, E_but_2_enyl_link_atom_idx_2 = CH3_idxs
 
@@ -1615,7 +1617,7 @@ class Peptide(object):
                 for atom in rw_E_but_2_enyl_mol.GetAtoms():
                     # 单独添加的分子都是 residue = 0
                     atom.SetProp('residue', '0')
-                    if atom.GetExplicitValence() == 1:
+                    if _explicit_valence(atom) == 1:
                         CH3_idxs.append(atom.GetIdx())
                 E_but_2_enyl_link_atom_idx_1, E_but_2_enyl_link_atom_idx_2 = CH3_idxs
 
@@ -1708,10 +1710,10 @@ class Peptide(object):
                     N_min_valence = 10
                     for atom in rw_main_chain_linked_mol.GetAtoms():
                         if int(atom.GetProp('residue')) in positions and not atom.HasProp(
-                                'N_terminal') and atom.GetSymbol() == 'N' and atom.GetExplicitValence() < 3:
-                            if atom.GetExplicitValence() < N_min_valence:
+                                'N_terminal') and atom.GetSymbol() == 'N' and _explicit_valence(atom) < 3:
+                            if _explicit_valence(atom) < N_min_valence:
                                 N_min_valence_idx = atom.GetIdx()
-                                N_min_valence = atom.GetExplicitValence()
+                                N_min_valence = _explicit_valence(atom)
 
                     # 如果找到了侧链上的 N
                     if N_min_valence_idx is not None:
@@ -1730,8 +1732,8 @@ class Peptide(object):
                     side_COOH_OH_idx_list = []
                     oxygen_idx_to_remove = None
                     for atom in rw_main_chain_linked_mol.GetAtoms():
-                        # 注意这里一定要是 atom.GetExplicitValence() == 1 而不是 degree=1，因为双键O也是只有一个邻居
-                        if atom.GetSymbol() == 'O' and atom.GetExplicitValence() == 1 and int(
+                        # 注意这里一定要是 _explicit_valence(atom) == 1 而不是 degree=1，因为双键O也是只有一个邻居
+                        if atom.GetSymbol() == 'O' and _explicit_valence(atom) == 1 and int(
                                 atom.GetProp('residue')) in positions:
                             hydroxyl_idx_list.append(atom.GetIdx())
 
@@ -1742,7 +1744,7 @@ class Peptide(object):
                             oxygen_atom = rw_main_chain_linked_mol.GetAtomWithIdx(hydroxyl_idx)
                             oxygen_neighbor_atom = oxygen_atom.GetNeighbors()[0]
                             # 检查这个邻居是否是 -COOH 中的 C 原子
-                            if oxygen_neighbor_atom.GetSymbol() == "C" and oxygen_neighbor_atom.GetDegree() == 3 and oxygen_neighbor_atom.GetExplicitValence() == 4 and not oxygen_neighbor_atom.HasProp(
+                            if oxygen_neighbor_atom.GetSymbol() == "C" and oxygen_neighbor_atom.GetDegree() == 3 and _explicit_valence(oxygen_neighbor_atom) == 4 and not oxygen_neighbor_atom.HasProp(
                                     'C_terminal'):
                                 O_count = 0  # 氧原子计数
                                 double_bond_to_oxygen = False  # 是否找到双键 O
@@ -1813,10 +1815,10 @@ class Peptide(object):
                         N_min_valence_idx = None
                         N_min_valence = 10
                         for atom in rw_main_chain_linked_mol.GetAtoms():
-                            if int(atom.GetProp('residue')) in positions and not atom.HasProp('N_terminal') and atom.GetSymbol() == 'N' and atom.GetExplicitValence()<3:
-                                if atom.GetExplicitValence()<N_min_valence:
+                            if int(atom.GetProp('residue')) in positions and not atom.HasProp('N_terminal') and atom.GetSymbol() == 'N' and _explicit_valence(atom)<3:
+                                if _explicit_valence(atom)<N_min_valence:
                                     N_min_valence_idx = atom.GetIdx()
-                                    N_min_valence = atom.GetExplicitValence()
+                                    N_min_valence = _explicit_valence(atom)
 
                         # 如果找到了侧链上的 N
                         if N_min_valence_idx is not None:
@@ -1868,8 +1870,8 @@ class Peptide(object):
                             side_COOH_OH_idx_list = []
                             oxygen_idx_to_remove = None
                             for atom in rw_main_chain_linked_mol.GetAtoms():
-                                # 注意这里一定要是 atom.GetExplicitValence() == 1 而不是 degree=1，因为双键O也是只有一个邻居
-                                if atom.GetSymbol() == 'O' and atom.GetExplicitValence() == 1 and int(atom.GetProp('residue')) in positions:
+                                # 注意这里一定要是 _explicit_valence(atom) == 1 而不是 degree=1，因为双键O也是只有一个邻居
+                                if atom.GetSymbol() == 'O' and _explicit_valence(atom) == 1 and int(atom.GetProp('residue')) in positions:
                                     hydroxyl_idx_list.append(atom.GetIdx())
 
                             # 如果不止一个 -OH ，那可能有 -COOH 或者不止一个 -OH, 尝试去掉其中的 -COOH 中的 -OH
@@ -1879,7 +1881,7 @@ class Peptide(object):
                                     oxygen_atom = rw_main_chain_linked_mol.GetAtomWithIdx(hydroxyl_idx)
                                     oxygen_neighbor_atom = oxygen_atom.GetNeighbors()[0]
                                     # 检查这个邻居是否是 -COOH 中的 C 原子
-                                    if oxygen_neighbor_atom.GetSymbol() == "C" and oxygen_neighbor_atom.GetDegree() == 3 and oxygen_neighbor_atom.GetExplicitValence() == 4 and not oxygen_neighbor_atom.HasProp(
+                                    if oxygen_neighbor_atom.GetSymbol() == "C" and oxygen_neighbor_atom.GetDegree() == 3 and _explicit_valence(oxygen_neighbor_atom) == 4 and not oxygen_neighbor_atom.HasProp(
                                             'C_terminal'):
                                         O_count = 0  # 氧原子计数
                                         double_bond_to_oxygen = False  # 是否找到双键 O
@@ -1935,10 +1937,10 @@ class Peptide(object):
                         N_idx_to_remove = None
                         for atom in rw_main_chain_linked_mol.GetAtoms():
                             if int(atom.GetProp('residue')) in positions and not atom.HasProp(
-                                    'N_terminal') and atom.GetSymbol() == 'N' and atom.GetExplicitValence() < 3:
-                                if atom.GetExplicitValence() < N_min_valence:
+                                    'N_terminal') and atom.GetSymbol() == 'N' and _explicit_valence(atom) < 3:
+                                if _explicit_valence(atom) < N_min_valence:
                                     N_min_valence_idx = atom.GetIdx()
-                                    N_min_valence = atom.GetExplicitValence()
+                                    N_min_valence = _explicit_valence(atom)
 
                         # 如果找到了侧链上的 N
                         if N_min_valence_idx is not None:
@@ -2070,10 +2072,10 @@ class Peptide(object):
             N_min_valence_idx = None
             N_min_valence = 10
             for atom in rw_modification_mol.GetAtoms():
-                if atom.GetSymbol() == 'N' and atom.GetExplicitValence() < 3:
-                    if atom.GetExplicitValence() < N_min_valence:
+                if atom.GetSymbol() == 'N' and _explicit_valence(atom) < 3:
+                    if _explicit_valence(atom) < N_min_valence:
                         N_min_valence_idx = atom.GetIdx()
-                        N_min_valence = atom.GetExplicitValence()
+                        N_min_valence = _explicit_valence(atom)
 
                         modi_atom_to_be_linked_idx = N_min_valence_idx
 
@@ -2085,8 +2087,8 @@ class Peptide(object):
             side_COOH_OH_idx_list = []
             oxygen_idx_to_remove = None
             for atom in rw_modification_mol.GetAtoms():
-                # 注意这里一定要是 atom.GetExplicitValence() == 1 而不是 degree=1，因为双键O也是只有一个邻居
-                if atom.GetSymbol() == 'O' and atom.GetExplicitValence() == 1:
+                # 注意这里一定要是 _explicit_valence(atom) == 1 而不是 degree=1，因为双键O也是只有一个邻居
+                if atom.GetSymbol() == 'O' and _explicit_valence(atom) == 1:
                     hydroxyl_idx_list.append(atom.GetIdx())
 
             # 如果不止一个 -OH ，那可能有 -COOH 或者不止一个 -OH, 尝试去掉其中的 -COOH 中的 -OH
@@ -2096,7 +2098,7 @@ class Peptide(object):
                     oxygen_atom = rw_modification_mol.GetAtomWithIdx(hydroxyl_idx)
                     oxygen_neighbor_atom = oxygen_atom.GetNeighbors()[0]
                     # 检查这个邻居是否是 -COOH 中的 C 原子
-                    if oxygen_neighbor_atom.GetSymbol() == "C" and oxygen_neighbor_atom.GetDegree() == 3 and oxygen_neighbor_atom.GetExplicitValence() == 4:
+                    if oxygen_neighbor_atom.GetSymbol() == "C" and oxygen_neighbor_atom.GetDegree() == 3 and _explicit_valence(oxygen_neighbor_atom) == 4:
                         O_count = 0  # 氧原子计数
                         double_bond_to_oxygen = False  # 是否找到双键 O
                         for neighbor in oxygen_neighbor_atom.GetNeighbors():
@@ -2186,7 +2188,7 @@ class Peptide(object):
         if len(modi_atom_to_be_linked_idxs) == 0:
             for atom in rw_modification_mol.GetAtoms():
                 # 寻找 -COOH
-                if atom.GetSymbol() == "C" and atom.GetDegree() == 3 and atom.GetExplicitValence() == 4:
+                if atom.GetSymbol() == "C" and atom.GetDegree() == 3 and _explicit_valence(atom) == 4:
                     O_count = 0  # 氧原子计数
                     double_bond_to_oxygen = False  # 是否找到双键 O
                     for neighbor in atom.GetNeighbors():
@@ -2208,7 +2210,7 @@ class Peptide(object):
         # 如果 dummy atom 和 -COOH 上的 -OH 都没找到，那就找 -OH
         if len(modi_atom_to_be_linked_idxs) == 0:
             for atom in rw_modification_mol.GetAtoms():
-                if atom.GetSymbol() == "O" and atom.GetExplicitValence() == 1:
+                if atom.GetSymbol() == "O" and _explicit_valence(atom) == 1:
                     atom_idx_to_remove.append(atom.GetIdx())
                     modi_atom_to_be_linked_idxs.append(atom.GetNeighbors()[0].GetIdx())
                     break

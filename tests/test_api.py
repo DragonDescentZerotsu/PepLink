@@ -46,6 +46,20 @@ class AaSeqsToSmilesApiTests(unittest.TestCase):
     def tearDown(self) -> None:
         clear_registered_noncanonical_aas()
 
+    def test_terminal_modification_without_deprecated_valence_warnings(self) -> None:
+        # The rest of the suite disables native RDKit logs in this process.
+        result = subprocess.run(
+            [sys.executable, "-c",
+             "from PepLink import aa_seqs_to_smiles\n"
+             "print(aa_seqs_to_smiles('G', n_terminal='Ac', n_terminal_overrides={'Ac': 'CC(=O)O'}))"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        self.assertEqual(result.stdout.strip(), "CC(=O)NCC(=O)O")
+        self.assertNotIn("please use GetValence", result.stderr)
+
     def test_examples_from_dataset(self) -> None:
         for record_id in SUPPORTED_FORWARD_IDS:
             with self.subTest(record_id=record_id):
