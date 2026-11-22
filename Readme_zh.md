@@ -113,6 +113,8 @@ from PepLink import register_noncanonical_aas_from_csv
 register_noncanonical_aas_from_csv("examples/example_custom_noncanonical_aas.csv")
 ```
 
+残基与前一个残基连接时需要 N 侧连接位点，与后一个残基连接时需要游离羧基。例如，`OBU` 可位于链首，`N2H3-Gly` 可位于链尾。缺少所需连接位点时会抛出 `UnsupportedPeptideError`，并指出残基名称和位置。
+
 ## 支持范围
 
 ### `aa_seqs_to_smiles(...)`
